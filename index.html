@@ -3,71 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>私家菜单</title>
-    <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/3.2.31/vue.global.prod.min.js"></script>
+    <title>私人菜单</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 15px; }
-        .app-container { max-width: 500px; margin: 0 auto; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .title { font-size: 22px; font-weight: 800; color: #1c1c1e; margin-bottom: 15px; display: flex; justify-content: space-between; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .food-btn { background: white; border: 1px solid #e5e5ea; padding: 15px; border-radius: 12px; text-align: center; font-weight: 600; font-size: 15px; color: #3a3a3c; transition: 0.2s; }
+        /* 这里的代码不依赖任何外部文件，100% 能显示 */
+        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 15px; color: #1c1c1e; }
+        .title { font-size: 20px; font-weight: 800; margin: 10px 0 20px 0; display: flex; justify-content: space-between; }
+        .card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; border-left: 6px solid #ff9500; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        /* 核心按钮样式 */
+        .food-btn { 
+            background: white; border: 1.5px solid #e5e5ea; padding: 18px 10px; border-radius: 12px; 
+            text-align: center; font-weight: 600; font-size: 16px; transition: 0.1s;
+        }
+        /* 选中状态 */
         .food-btn.active { background: #ff9500; color: white; border-color: #ff9500; }
-        .selected-list { background: #fff; border-left: 4px solid #ff9500; border-radius: 8px; padding: 10px; margin-top: 10px; }
-        .selected-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f2f2f7; font-size: 16px; }
-        .share-hint { text-align: center; color: #8e8e93; font-size: 12px; margin-top: 20px; }
+        
+        #result-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 30px; }
+        .tag { background: #fff5ee; color: #ff9500; padding: 5px 12px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 1px solid #ff9500; }
     </style>
 </head>
 <body>
-    <div id="app" class="app-container">
-        <div class="title">
-            <span>🍽️ 今日吃啥</span>
-            <button @click="reset" style="font-size:12px; border:none; background:none; color:#007aff;">重置</button>
-        </div>
 
-        <div class="card">
-            <div style="font-size:13px; color:#8e8e93; margin-bottom:10px;">已选择的菜单：</div>
-            <div v-if="selectedItems.length === 0" style="text-align:center; color:#c7c7cc; padding:10px;">空空如也</div>
-            <div v-else>
-                <div v-for="item in selectedItems" :key="item.id" class="selected-item">
-                    <span style="font-weight:bold;">{{ item.name }}</span>
-                    <span style="font-size:11px; color:#ff9500;">{{ item.category }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="menu-grid">
-            <div v-for="item in menuList" :key="item.id" 
-                 class="food-btn" :class="{active: item.selected}"
-                 @click="item.selected = !item.selected">
-                {{ item.name }}
-            </div>
-        </div>
-
-        <div class="share-hint">选好后截图</div>
+    <div class="title">
+        <span>🍽️ 今日吃啥</span>
+        <button onclick="location.reload()" style="font-size:12px; border:none; background:none; color:#007aff;">重置刷新</button>
     </div>
 
+    <div class="card">
+        <div style="font-size:12px; color:#8e8e93; margin-bottom:10px;">已勾选：</div>
+        <div id="result-list"></div>
+    </div>
+
+    <div class="grid">
+        <div class="food-btn" onclick="tap(this, '辣椒炒肉')">辣椒炒肉</div>
+        <div class="food-btn" onclick="tap(this, '玉米排骨汤')">玉米排骨汤</div>
+        <div class="food-btn" onclick="tap(this, '麻婆豆腐')">麻婆豆腐</div>
+        <div class="food-btn" onclick="tap(this, '番茄炒蛋')">番茄炒蛋</div>
+        <div class="food-btn" onclick="tap(this, '隆江猪脚')">隆江猪脚</div>
+        <div class="food-btn" onclick="tap(this, '手撕鸡')">手撕鸡</div>
+        <div class="food-btn" onclick="tap(this, '红烧肉')">红烧肉</div>
+        <div class="food-btn" onclick="tap(this, '清蒸鱼')">清蒸鱼</div>
+        <div class="food-btn" onclick="tap(this, '炸酱面')">炸酱面</div>
+        <div class="food-btn" onclick="tap(this, '奶茶/咖啡')">奶茶/咖啡</div>
+    </div>
+
+    <p style="text-align:center; color:#aeaeb2; font-size:11px; margin-top:30px;">选好后截图发给家人</p>
+
     <script>
-        const { createApp, ref, computed } = Vue;
-        createApp({
-            setup() {
-                const menuList = ref([
-                    { id: 1, name: '辣椒炒肉', category: '川湘', selected: false },
-                    { id: 2, name: '玉米排骨汤', category: '清淡', selected: false },
-                    { id: 3, name: '麻婆豆腐', category: '川湘', selected: false },
-                    { id: 4, name: '番茄炒蛋', category: '家常', selected: false },
-                    { id: 5, name: '隆江猪脚', category: '硬菜', selected: false },
-                    { id: 6, name: '手撕鸡', category: '清淡', selected: false },
-                    { id: 7, name: '地三鲜', category: '素菜', selected: false },
-                    { id: 8, name: '水饺', category: '主食', selected: false },
-                    { id: 9, name: '珍珠奶茶', category: '饮品', selected: false },
-                    { id: 10, name: '手冲咖啡', category: '饮品', selected: false }
-                ]);
-                const selectedItems = computed(() => menuList.value.filter(i => i.selected));
-                const reset = () => { if(confirm('重置菜单？')) menuList.value.forEach(i => i.selected = false); };
-                return { menuList, selectedItems, reset };
+        // 纯原生 JavaScript，不加载任何外部文件
+        let selected = [];
+        function tap(el, name) {
+            el.classList.toggle('active');
+            if (el.classList.contains('active')) {
+                selected.push(name);
+            } else {
+                selected = selected.filter(i => i !== name);
             }
-        }).mount('#app');
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('result-list');
+            if (selected.length === 0) {
+                container.innerHTML = '<span style="color:#d1d1d6">暂未选菜...</span>';
+                return;
+            }
+            container.innerHTML = selected.map(name => `<span class="tag">${name}</span>`).join('');
+        }
+        render();
     </script>
 </body>
 </html>
