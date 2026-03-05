@@ -3,225 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的私人菜库-豪华版</title>
-    <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/3.2.31/vue.global.prod.min.js"></script>
-    <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>中国美食大全-豪华旗舰版</title>
     <style>
-        body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f8f9fa; margin: 0; padding: 15px; color: #1c1c1e; padding-bottom: 80px; }
-        [v-cloak] { display: none; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .title { font-size: 24px; font-weight: 800; }
+        :root { --primary: #ff9500; --bg: #f2f2f7; --card: #ffffff; --danger: #ff3b30; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px 10px 140px; color: #1c1c1e; -webkit-user-select: none; }
         
-        /* 搜索和添加 */
-        .search-add-bar { display: flex; gap: 8px; margin-bottom: 20px; }
-        .search-add-bar input { flex: 1; border: none; background: #e9ecef; padding: 12px; border-radius: 10px; font-size: 16px; outline: none; }
-        .search-add-bar button { background: #007bff; color: white; border: none; padding: 0 18px; border-radius: 10px; font-weight: bold; }
+        /* 录入区 */
+        .add-panel { background: var(--card); padding: 15px; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .input-row input { flex: 2; border: 1px solid #e5e5ea; padding: 12px; border-radius: 10px; font-size: 15px; outline: none; background: #f9f9f9; }
+        .input-row select { flex: 1.2; border: 1px solid #e5e5ea; padding: 10px; border-radius: 10px; font-size: 13px; outline: none; background: white; }
+        .add-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 16px; }
 
-        /* 已选列表 */
-        .selected-card { background: white; border-radius: 18px; padding: 20px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); margin-bottom: 20px; border-left: 6px solid #ff9500; }
-        .selected-header { font-size: 14px; color: #6c757d; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .selected-tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 30px; }
-        .tag { background: #fff5ee; color: #ff9500; padding: 6px 12px; border-radius: 8px; font-size: 15px; font-weight: bold; border: 1px solid #ff9500; }
-        
-        /* 分类导航 */
-        .category-nav { display: flex; overflow-x: auto; gap: 8px; margin-bottom: 20px; padding-bottom: 5px; /* 留出滚动条空间 */ }
-        .category-nav::-webkit-scrollbar { display: none; } /* 隐藏滚动条 */
-        .cat-btn { background: white; border: 1px solid #e9ecef; padding: 10px 18px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #495057; white-space: nowrap; }
-        .cat-btn.active { background: #ff9500; color: white; border-color: #ff9500; }
+        /* 导航 */
+        .nav { display: flex; overflow-x: auto; gap: 8px; margin-bottom: 15px; padding-bottom: 5px; }
+        .nav::-webkit-scrollbar { display: none; }
+        .nav-btn { background: white; border: 1px solid #e5e5ea; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-size: 13px; font-weight: 600; color: #666; }
+        .nav-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* 菜品网格 */
-        .food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .food-item { 
-            background: white; border: 1.5px solid #e9ecef; padding: 18px 10px; border-radius: 15px; 
-            text-align: center; font-weight: 600; font-size: 16px; position: relative; cursor: pointer;
-        }
-        .food-item.active { background: #fff5ee; color: #ff9500; border-color: #ff9500; }
-        .food-item.active::after { content: '✓'; position: absolute; top: 8px; right: 8px; background: #ff9500; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; }
-        
-        /* 删除模式 */
-        .edit-mode .food-item { opacity: 0.8; }
-        .edit-mode .food-item::after { display: none; }
-        .edit-mode .food-item .del-icon { display: block; }
-        .del-icon { position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; display: none; }
-        
-        /* 底部操作按钮 */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.08); display: flex; gap: 10px; }
-        .bottom-bar button { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .reset-btn { background: #6c757d; color: white; }
-        .share-btn { background: #007bff; color: white; }
+        /* 网格 */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .item { background: white; border-radius: 14px; padding: 18px 8px; text-align: center; font-weight: 600; border: 2px solid transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; font-size: 15px; }
+        .item.selected { border-color: var(--primary); background: #fff9f2; color: var(--primary); }
+        .item .cat-label { position: absolute; top: 4px; left: 6px; font-size: 9px; opacity: 0.3; font-weight: normal; }
+        .del-tag { position: absolute; top: -6px; right: -6px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 2px solid white; font-size: 12px; }
+        body.edit-mode .del-tag { display: flex; }
 
-        /* 截图预览 */
-        .share-preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .share-preview-overlay p { color: white; margin-bottom: 15px; font-weight: bold; }
-        .share-preview-overlay img { max-width: 90%; max-height: 80vh; border-radius: 15px; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        /* 底部 */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 15px 20px; display: flex; gap: 10px; border-top: 1px solid #e5e5ea; z-index: 50; }
+        .btn { flex: 1; padding: 15px; border-radius: 14px; border: none; font-weight: bold; font-size: 15px; }
+        .btn-gray { background: #e5e5ea; color: #3a3a3c; }
+        .btn-main { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(255,149,0,0.2); }
+
+        /* 结算弹窗 */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        #bill-card { background: white; width: 100%; max-width: 320px; padding: 25px; border-radius: 15px; max-height: 80vh; overflow-y: auto; position: relative; }
+        .bill-group { margin-bottom: 12px; border-left: 3px solid var(--primary); padding-left: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="app" v-cloak>
-        <div class="header">
-            <h1 class="title">我的私人菜库</h1>
-            <button @click="toggleEditMode" class="cat-btn" :style="{ backgroundColor: isEditMode ? '#dc3545' : '', color: isEditMode ? 'white' : '' }">
-                {{ isEditMode ? '完成管理' : '管理菜品' }}
-            </button>
+    <div class="add-panel">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+            <b style="font-size:20px;">🍚 私家中华菜库</b>
+            <span onclick="toggleEdit()" id="editBtn" style="color:#007aff; font-size:14px; font-weight:600;">管理菜库</span>
         </div>
-
-        <div class="search-add-bar">
-            <input type="text" v-model="newFoodName" @keyup.enter="addFood" placeholder="输入新菜名，回车或点添加">
-            <button @click="addFood">添加</button>
+        <div class="input-row">
+            <input type="text" id="foodName" placeholder="搜菜名或新增...">
+            <select id="foodCat">
+                <option value="川湘菜">川湘菜</option>
+                <option value="粤菜/点心">粤菜/点心</option>
+                <option value="江浙/鲁菜">江浙/鲁菜</option>
+                <option value="北方/面食">北方/面食</option>
+                <option value="烤箱/甜品">烤箱/甜品</option>
+                <option value="汤/粥/火锅">汤/粥/火锅</option>
+                <option value="饮品/酒水">饮品/酒水</option>
+                <option value="小吃/宵夜">小吃/宵夜</option>
+                <option value="NEW">+ 新分类</option>
+            </select>
         </div>
+        <button class="add-btn" onclick="addNewFood()">录入并勾选</button>
+    </div>
 
-        <div id="share-area" class="selected-card">
-            <div class="selected-header">
-                <span style="font-size:16px; color:#343a40;">🍽️ 今日已选：</span>
-                <span style="font-size:12px; color:#adb5bd;">{{ todayDate }}</span>
-            </div>
-            <div v-if="selectedItems.length === 0" class="selected-tags" style="color:#ced4da; font-style:italic;">点击下方菜品选择...</div>
-            <div v-else class="selected-tags">
-                <span v-for="item in selectedItems" :key="item.name" class="tag">{{ item.name }}</span>
-            </div>
-        </div>
+    <div class="nav" id="navBar"></div>
+    <div class="grid" id="foodGrid"></div>
 
-        <div class="category-nav">
-            <button v-for="cat in categories" :key="cat" @click="currentCategory = cat"
-                    :class="['cat-btn', { active: currentCategory === cat }]">
-                {{ cat }}
-            </button>
-        </div>
+    <div class="footer">
+        <button class="btn btn-gray" onclick="resetSelected()">清空</button>
+        <button class="btn btn-main" onclick="openBill()">📸 生成结算单</button>
+    </div>
 
-        <div class="food-grid">
-            <div v-for="(item, index) in filteredFoodList" :key="item.name" 
-                 :class="['food-item', { active: item.selected, 'edit-mode': isEditMode }]" 
-                 @click="isEditMode ? null : toggleSelect(item)">
-                {{ item.name }}
-                <div v-if="isEditMode" class="del-icon" @click.stop="deleteFood(item.name, index)">✕</div>
-            </div>
-        </div>
-
-        <div class="bottom-bar">
-            <button class="f-btn reset-btn" @click="resetSelection">清空已选</button>
-            <button class="f-btn share-btn" @click="generateShareImage">📸 生成分享图</button>
-        </div>
-
-        <div v-if="shareImage" class="share-preview-overlay" @click="shareImage = null">
-            <p>长按图片保存或分享</p>
-            <img :src="shareImage" alt="分享图片">
+    <div class="modal" id="billModal" onclick="this.classList.remove('show')">
+        <div id="bill-card" onclick="event.stopPropagation()">
+            <h3 style="text-align:center; margin-top:0;">🍽️ 今日点餐建议</h3>
+            <div id="billContent"></div>
+            <p style="text-align:center; color:#999; font-size:12px; margin-top:20px; border-top:1px dashed #eee; padding-top:10px;">长按截屏分享给家人</p>
         </div>
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted, watch } = Vue;
+        // 1. 扩充后的海量美食数据库
+        const bigFoodDB = [
+            // 川湘
+            {n:'辣椒炒肉',c:'川湘菜'},{n:'剁椒鱼头',c:'川湘菜'},{n:'麻婆豆腐',c:'川湘菜'},{n:'回锅肉',c:'川湘菜'},{n:'鱼香肉丝',c:'川湘菜'},{n:'水煮肉片',c:'川湘菜'},{n:'辣子鸡',c:'川湘菜'},{n:'小炒黄牛肉',c:'川湘菜'},{n:'毛血旺',c:'川湘菜'},{n:'口水鸡',c:'川湘菜'},{n:'酸菜鱼',c:'川湘菜'},{n:'干锅牛蛙',c:'川湘菜'},{n:'农家一碗香',c:'川湘菜'},{n:'外婆菜炒蛋',c:'川湘菜'},
+            // 粤菜/点心
+            {n:'白切鸡',c:'粤菜/点心'},{n:'蜜汁叉烧',c:'粤菜/点心'},{n:'脆皮烧鹅',c:'粤菜/点心'},{n:'干炒牛河',c:'粤菜/点心'},{n:'蚝油生菜',c:'粤菜/点心'},{n:'清蒸鲈鱼',c:'粤菜/点心'},{n:'虾饺皇',c:'粤菜/点心'},{n:'豉汁凤爪',c:'粤菜/点心'},{n:'红米肠',c:'粤菜/点心'},{n:'烧卖',c:'粤菜/点心'},{n:'肠粉',c:'粤菜/点心'},{n:'滑蛋虾仁',c:'粤菜/点心'},
+            // 江浙/鲁菜
+            {n:'东坡肉',c:'江浙/鲁菜'},{n:'西湖醋鱼',c:'江浙/鲁菜'},{n:'龙井虾仁',c:'江浙/鲁菜'},{n:'狮子头',c:'江浙/鲁菜'},{n:'糖醋排骨',c:'江浙/鲁菜'},{n:'九转大肠',c:'江浙/鲁菜'},{n:'黄焖鸡',c:'江浙/鲁菜'},{n:'葱烧海参',c:'江浙/鲁菜'},{n:'红烧狮子头',c:'江浙/鲁菜'},
+            // 北方/面食
+            {n:'地三鲜',c:'北方/面食'},{n:'锅包肉',c:'北方/面食'},{n:'北京烤鸭',c:'北方/面食'},{n:'炸酱面',c:'北方/面食'},{n:'肉夹馍',c:'北方/面食'},{n:'羊肉泡馍',c:'北方/面食'},{n:'大盘鸡',c:'北方/面食'},{n:'油泼面',c:'北方/面食'},{n:'兰州拉面',c:'北方/面食'},{n:'韭菜盒子',c:'北方/面食'},{n:'猪肉大葱水饺',c:'北方/面食'},{n:'驴肉火烧',c:'北方/面食'},{n:'京酱肉丝',c:'北方/面食'},
+            // 烤箱/甜品
+            {n:'新奥尔良烤翅',c:'烤箱/甜品'},{n:'葡式蛋挞',c:'烤箱/甜品'},{n:'巴斯克蛋糕',c:'烤箱/甜品'},{n:'戚风蛋糕',c:'烤箱/甜品'},{n:'烤蜜薯',c:'烤箱/甜品'},{n:'披萨',c:'烤箱/甜品'},{n:'烤羊排',c:'烤箱/甜品'},{n:'双皮奶',c:'烤箱/甜品'},{n:'杨枝甘露',c:'烤箱/甜品'},{n:'芒果糯米饭',c:'烤箱/甜品'},{n:'姜撞奶',c:'烤箱/甜品'},
+            // 汤/粥/火锅
+            {n:'玉米排骨汤',c:'汤/粥/火锅'},{n:'猪肚鸡火锅',c:'汤/粥/火锅'},{n:'潮汕牛肉火锅',c:'汤/粥/火锅'},{n:'皮蛋瘦肉粥',c:'汤/粥/火锅'},{n:'老鸭汤',c:'汤/粥/火锅'},{n:'腌笃鲜',c:'汤/粥/火锅'},{n:'胡辣汤',c:'汤/粥/火锅'},{n:'罗宋汤',c:'汤/粥/火锅'},{n:'海底捞火锅',c:'汤/粥/火锅'},{n:'海鲜粥',c:'汤/粥/火锅'},{n:'鲫鱼豆腐汤',c:'汤/粥/火锅'},
+            // 饮品/酒水
+            {n:'珍珠奶茶',c:'饮品/酒水'},{n:'手打柠檬茶',c:'饮品/酒水'},{n:'手冲咖啡',c:'饮品/酒水'},{n:'美式咖啡',c:'饮品/酒水'},{n:'生椰拿铁',c:'饮品/酒水'},{n:'鲜榨橙汁',c:'饮品/酒水'},{n:'可口可乐',c:'饮品/酒水'},{n:'苏打气泡水',c:'饮品/酒水'},{n:'精酿啤酒',c:'饮品/酒水'},{n:'五粮液',c:'饮品/酒水'},{n:'茅台',c:'饮品/酒水'},{n:'赤霞珠红酒',c:'饮品/酒水'},{n:'茉莉花茶',c:'饮品/酒水'},{n:'冰镇酸梅汤',c:'饮品/酒水'},
+            // 小吃/宵夜
+            {n:'螺蛳粉',c:'小吃/宵夜'},{n:'臭豆腐',c:'小吃/宵夜'},{n:'烤羊肉串',c:'小吃/宵夜'},{n:'麻辣烫',c:'小吃/宵夜'},{n:'炸串',c:'小吃/宵夜'},{n:'小龙虾',c:'小吃/宵夜'},{n:'章鱼小丸子',c:'小吃/宵夜'},{n:'煎饼果子',c:'小吃/宵夜'},{n:'烤冷面',c:'小吃/宵夜'}
+        ];
 
-        createApp({
-            setup() {
-                const categories = ref(['全部', '川湘', '粤菜', '家常菜', '汤羹', '面食主食', '烧烤炸物', '甜点烘焙', '饮品酒水']);
-                const currentCategory = ref('全部');
-                const newFoodName = ref('');
-                const isEditMode = ref(false);
-                const shareImage = ref(null);
+        let db = JSON.parse(localStorage.getItem('china_food_db_pro')) || bigFoodDB;
+        let selected = [];
+        let curCat = '全部';
+        let isEdit = false;
 
-                // 初始的豪华菜单数据
-                const defaultMenuData = [
-                    { name: '辣椒炒肉', category: '川湘' }, { name: '麻婆豆腐', category: '川湘' }, { name: '回锅肉', category: '川湘' },
-                    { name: '剁椒鱼头', category: '川湘' }, { name: '水煮牛肉', category: '川湘' }, { name: '酸菜鱼', category: '川湘' },
-                    { name: '小炒黄牛肉', category: '川湘' }, { name: '蒜蓉生蚝', category: '粤菜' }, { name: '白切鸡', category: '粤菜' },
-                    { name: '蜜汁叉烧', category: '粤菜' }, { name: '广式烧鸭', category: '粤菜' }, { name: '蚝油生菜', category: '家常菜' },
-                    { name: '番茄炒蛋', category: '家常菜' }, { name: '地三鲜', category: '家常菜' }, { name: '酸辣土豆丝', category: '家常菜' },
-                    { name: '蒜蓉西兰花', category: '家常菜' }, { name: '可乐鸡翅', category: '家常菜' }, { name: '玉米排骨汤', category: '汤羹' },
-                    { name: '冬瓜排骨汤', category: '汤羹' }, { name: '罗宋汤', category: '汤羹' }, { name: '猪肚鸡汤', category: '汤羹' },
-                    { name: '海鲜粥', category: '面食主食' }, { name: '扬州炒饭', category: '面食主食' }, { name: '炸酱面', category: '面食主食' },
-                    { name: '牛肉拉面', category: '面食主食' }, { name: '意式肉酱面', category: '面食主食' }, { name: '披萨', category: '面食主食' },
-                    { name: '寿司', category: '面食主食' }, { name: '烤鸡翅', category: '烧烤炸物' }, { name: '炸薯条', category: '烧烤炸物' },
-                    { name: '烤羊肉串', category: '烧烤炸物' }, { name: '炸鸡块', category: '烧烤炸物' }, { name: '葡式蛋挞', category: '甜点烘焙' },
-                    { name: '提拉米苏', category: '甜点烘焙' }, { name: '千层蛋糕', category: '甜点烘焙' }, { name: '布朗尼', category: '甜点烘焙' },
-                    { name: '抹茶冰淇淋', category: '甜点烘焙' }, { name: '手冲咖啡', category: '饮品酒水' }, { name: '珍珠奶茶', category: '饮品酒水' },
-                    { name: '果汁', category: '饮品酒水' }, { name: '啤酒', category: '饮品酒水' }, { name: '红酒', category: '饮品酒水' },
-                ].map(item => ({ ...item, selected: false })); // 确保所有初始菜品都有 selected 属性
+        function render() {
+            const cats = ['全部', ...new Set(db.map(i => i.c))];
+            
+            // 保持Select同步
+            const select = document.getElementById('foodCat');
+            const currentSelectedCat = select.value;
+            select.innerHTML = cats.filter(c=>c!=='全部').map(c=>`<option value="${c}">${c}</option>`).join('') + '<option value="NEW">+ 新分类</option>';
+            if(currentSelectedCat && currentSelectedCat !== 'NEW') select.value = currentSelectedCat;
 
-                const foodList = ref([]); // 最终的菜单数据，包含用户添加和选中状态
+            // 导航
+            document.getElementById('navBar').innerHTML = cats.map(c => `
+                <button class="nav-btn ${curCat === c ? 'active' : ''}" onclick="setCat('${c}')">${c}</button>
+            `).join('');
 
-                // 从 localStorage 加载数据
-                onMounted(() => {
-                    const savedFoods = localStorage.getItem('my_custom_food_list_v2');
-                    if (savedFoods) {
-                        foodList.value = JSON.parse(savedFoods);
-                    } else {
-                        // 如果没有保存过，就使用默认的菜单
-                        foodList.value = defaultMenuData;
-                    }
-                });
+            // 网格
+            const grid = document.getElementById('foodGrid');
+            const filtered = curCat === '全部' ? db : db.filter(i => i.c === curCat);
+            grid.innerHTML = filtered.map(item => `
+                <div class="item ${selected.includes(item.n) ? 'selected' : ''}" onclick="toggle('${item.n}')">
+                    <div class="del-tag" onclick="event.stopPropagation();removeFood('${item.n}')">✕</div>
+                    <div class="cat-label">${item.c}</div>
+                    ${item.n}
+                </div>
+            `).join('');
 
-                // 监听 foodList 变化并保存到 localStorage
-                watch(foodList, (newVal) => {
-                    localStorage.setItem('my_custom_food_list_v2', JSON.stringify(newVal));
-                }, { deep: true });
+            localStorage.setItem('china_food_db_pro', JSON.stringify(db));
+        }
 
-                const todayDate = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+        function setCat(c) { curCat = c; render(); }
 
-                const filteredFoodList = computed(() => {
-                    if (currentCategory.value === '全部') {
-                        return foodList.value;
-                    }
-                    return foodList.value.filter(item => item.category === currentCategory.value);
-                });
+        function toggle(n) {
+            if(isEdit) return;
+            const i = selected.indexOf(n);
+            if(i > -1) selected.splice(i, 1); else selected.push(n);
+            render();
+        }
 
-                const selectedItems = computed(() => foodList.value.filter(item => item.selected));
+        function addNewFood() {
+            const nameEl = document.getElementById('foodName');
+            const catEl = document.getElementById('foodCat');
+            let name = nameEl.value.trim();
+            let cat = catEl.value;
 
-                function toggleSelect(item) {
-                    item.selected = !item.selected;
-                }
-
-                function addFood() {
-                    const name = newFoodName.value.trim();
-                    if (name && !foodList.value.some(item => item.name === name)) {
-                        foodList.value.push({ name: name, category: currentCategory.value === '全部' ? '家常菜' : currentCategory.value, selected: false });
-                        newFoodName.value = '';
-                    }
-                }
-
-                function deleteFood(name, index) {
-                    if (confirm(`确定删除菜品 "${name}" 吗？`)) {
-                        // 使用 splice 删除，确保索引正确
-                        foodList.value.splice(foodList.value.findIndex(item => item.name === name), 1);
-                        // 如果被删除的菜品是当前选中的，也要从选中列表中移除
-                        selectedItems.value = selectedItems.value.filter(item => item.name !== name);
-                    }
-                }
-
-                function toggleEditMode() {
-                    isEditMode.value = !isEditMode.value;
-                }
-
-                function resetSelection() {
-                    if (confirm('确定清空所有已选菜品吗？')) {
-                        foodList.value.forEach(item => item.selected = false);
-                    }
-                }
-                
-                async function generateShareImage() {
-                    if (selectedItems.value.length === 0) {
-                        alert('请先选择菜品再生成分享图！');
-                        return;
-                    }
-                    const element = document.getElementById('share-area');
-                    // 临时修改背景色，确保截图背景正确
-                    element.style.backgroundColor = '#ffffff'; 
-                    const canvas = await html2canvas(element, { 
-                        scale: 3, 
-                        backgroundColor: null, // 让html2canvas处理背景
-                        useCORS: true // 尝试支持跨域图片，尽管我们没有用
-                    });
-                    element.style.backgroundColor = ''; // 恢复原背景色
-                    shareImage.value = canvas.toDataURL('image/png');
-                }
-
-                return {
-                    categories, currentCategory, foodList, filteredFoodList, selectedItems,
-                    newFoodName, isEditMode, shareImage, todayDate,
-                    toggleSelect, addFood, deleteFood, toggleEditMode, resetSelection, generateShareImage
-                };
+            if(!name) return;
+            if(cat === 'NEW') {
+                cat = prompt('请输入新分类名称');
+                if(!cat) return;
             }
-        }).mount('#app');
+
+            if(!db.find(i=>i.n === name)) {
+                db.unshift({n: name, c: cat});
+                selected.push(name);
+                curCat = cat;
+                nameEl.value = '';
+                render();
+            }
+        }
+
+        function removeFood(n) {
+            db = db.filter(i=>i.n !== n);
+            selected = selected.filter(s=>s !== n);
+            render();
+        }
+
+        function toggleEdit() {
+            isEdit = !isEdit;
+            document.body.classList.toggle('edit-mode', isEdit);
+            document.getElementById('editBtn').innerText = isEdit ? '完成管理' : '管理菜库';
+            document.getElementById('editBtn').style.color = isEdit ? 'red' : '#007aff';
+        }
+
+        function resetSelected() { selected = []; render(); }
+
+        function openBill() {
+            if(!selected.length) return;
+            const content = document.getElementById('billContent');
+            const groups = {};
+            selected.forEach(n => {
+                const item = db.find(i=>i.n === n);
+                if(!groups[item.c]) groups[item.c] = [];
+                groups[item.c].push(n);
+            });
+            content.innerHTML = Object.keys(groups).map(c => `
+                <div class="bill-group">
+                    <div style="font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:4px;">${c}</div>
+                    ${groups[c].map(n => `<div style="padding:3px 0; font-weight:600; border-bottom:1px solid #f9f9f9;">• ${n}</div>`).join('')}
+                </div>
+            `).join('');
+            document.getElementById('billModal').classList.add('show');
+        }
+
+        render();
     </script>
 </body>
 </html>
