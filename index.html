@@ -3,147 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>私家菜单 App</title>
-    <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/tailwindcss/2.2.19/tailwind.min.css">
+    <title>私家菜单</title>
     <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/3.2.31/vue.global.prod.min.js"></script>
-    <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        [v-cloak] { display: none; }
-        body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background-color: #f8f9fa; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* 增加平滑动画 */
-        .card-active { transform: scale(0.96); border-color: #f97316 !important; background-color: #fff7ed; }
+        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 15px; }
+        .app-container { max-width: 500px; margin: 0 auto; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .title { font-size: 22px; font-weight: 800; color: #1c1c1e; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .food-btn { background: white; border: 1px solid #e5e5ea; padding: 15px; border-radius: 12px; text-align: center; font-weight: 600; font-size: 15px; color: #3a3a3c; transition: 0.2s; }
+        .food-btn.active { background: #ff9500; color: white; border-color: #ff9500; }
+        .selected-list { background: #fff; border-left: 4px solid #ff9500; border-radius: 8px; padding: 10px; margin-top: 10px; }
+        .selected-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f2f2f7; font-size: 16px; }
+        .share-hint { text-align: center; color: #8e8e93; font-size: 12px; margin-top: 20px; }
     </style>
 </head>
-<body class="pb-12">
-    <div id="app" v-cloak>
-        <div class="max-w-md mx-auto px-4 py-6">
-            <header class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-black text-gray-800 tracking-tight">我的私人菜单</h1>
-                <button @click="resetDaily" class="text-xs font-bold text-gray-400 bg-white border px-4 py-2 rounded-full shadow-sm active:bg-gray-100">清空已选</button>
-            </header>
+<body>
+    <div id="app" class="app-container">
+        <div class="title">
+            <span>🍽️ 今日吃啥</span>
+            <button @click="reset" style="font-size:12px; border:none; background:none; color:#007aff;">重置</button>
+        </div>
 
-            <div id="share-area" class="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-50 mb-8 relative overflow-hidden">
-                <div class="flex justify-between items-center mb-6 border-b-2 border-orange-500 pb-2">
-                    <span class="text-xl font-bold text-gray-800">🍽️ 今日想吃</span>
-                    <span class="text-xs text-gray-400 font-mono italic">{{ todayDate }}</span>
-                </div>
-                
-                <div v-if="selectedItems.length === 0" class="py-12 text-center">
-                    <p class="text-gray-300 italic">请在下方点选菜品...</p>
-                </div>
-                
-                <div class="space-y-4">
-                    <div v-for="item in selectedItems" :key="item.id" class="flex justify-between items-center animate-fade-in">
-                        <div class="flex items-center">
-                            <span class="w-2 h-2 bg-orange-500 rounded-full mr-3"></span>
-                            <span class="text-lg font-bold text-gray-700">{{ item.name }}</span>
-                        </div>
-                        <span class="text-[10px] text-orange-400 font-bold border border-orange-100 px-2 py-0.5 rounded uppercase">{{ item.category }}</span>
-                    </div>
-                </div>
-
-                <div v-if="selectedItems.length > 0" class="mt-8 pt-4 border-t border-dashed text-right">
-                    <p class="text-xs text-gray-400">来自：私家菜单 App</p>
-                </div>
-            </div>
-
-            <div class="flex overflow-x-auto gap-2 mb-6 no-scrollbar">
-                <button v-for="cat in categories" @click="filterCat = cat"
-                        :class="['px-6 py-2 rounded-2xl text-sm font-bold shrink-0 transition-all shadow-sm border', filterCat === cat ? 'bg-gray-800 border-gray-800 text-white' : 'bg-white border-gray-100 text-gray-500']">
-                    {{ cat }}
-                </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div v-for="item in filteredList" :key="item.id" 
-                     @click="toggleSelect(item)"
-                     :class="['relative bg-white rounded-3xl p-3 border-2 transition-all cursor-pointer shadow-sm', item.selected ? 'card-active' : 'border-white']">
-                    
-                    <div class="w-full h-28 bg-gray-100 rounded-2xl mb-3 overflow-hidden">
-                        <img :src="`https://s1.ax1x.com/2023/06/07/pCidp80.jpg`" class="w-full h-full object-cover opacity-50">
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                             <span class="text-xs font-bold text-gray-400">{{ item.name }}</span>
-                        </div>
-                    </div>
-
-                    <div class="px-1 text-center">
-                        <div class="text-sm font-black text-gray-800 truncate">{{ item.name }}</div>
-                    </div>
-                    
-                    <div v-if="item.selected" class="absolute top-2 right-2 bg-orange-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] shadow-lg">✓</div>
+        <div class="card">
+            <div style="font-size:13px; color:#8e8e93; margin-bottom:10px;">已选择的菜单：</div>
+            <div v-if="selectedItems.length === 0" style="text-align:center; color:#c7c7cc; padding:10px;">空空如也</div>
+            <div v-else>
+                <div v-for="item in selectedItems" :key="item.id" class="selected-item">
+                    <span style="font-weight:bold;">{{ item.name }}</span>
+                    <span style="font-size:11px; color:#ff9500;">{{ item.category }}</span>
                 </div>
             </div>
         </div>
 
-        <div v-if="selectedItems.length > 0" class="fixed bottom-6 left-0 right-0 px-10 z-50">
-            <button @click="generateImage" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-full shadow-2xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all">
-                📸 生成长图发送
-            </button>
+        <div class="menu-grid">
+            <div v-for="item in menuList" :key="item.id" 
+                 class="food-btn" :class="{active: item.selected}"
+                 @click="item.selected = !item.selected">
+                {{ item.name }}
+            </div>
         </div>
 
-        <div v-if="shareImage" class="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-6" @click="shareImage = null">
-            <p class="text-white mb-4 text-sm font-bold">↑ 长按图片保存发送给家人</p>
-            <img :src="shareImage" class="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border-4 border-white">
-            <p class="text-white/40 mt-6 text-xs italic">点击任意处关闭</p>
-        </div>
+        <div class="share-hint">选好后截图</div>
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted, watch } = Vue;
-
+        const { createApp, ref, computed } = Vue;
         createApp({
             setup() {
-                const filterCat = ref('全部');
-                const shareImage = ref(null);
-                const categories = ['全部', '川湘经典', '粤式清淡', '家常素菜', '烘焙甜点', '主食面条', '饮品酒水'];
-                
                 const menuList = ref([
-                    { id: 1, name: '辣椒炒肉', category: '川湘经典', selected: false },
-                    { id: 2, name: '玉米排骨汤', category: '粤式清淡', selected: false },
-                    { id: 3, name: '千层蛋糕', category: '烘焙甜点', selected: false },
-                    { id: 4, name: '葡式蛋挞', category: '烘焙甜点', selected: false },
-                    { id: 5, name: '蚝油生菜', category: '家常素菜', selected: false },
-                    { id: 6, name: '隆江猪脚', category: '粤式清淡', selected: false },
-                    { id: 7, name: '广式手撕鸡', category: '粤式清淡', selected: false },
-                    { id: 8, name: '麻婆豆腐', category: '川湘经典', selected: false },
-                    { id: 9, name: '回锅肉', category: '川湘经典', selected: false },
-                    { id: 10, name: '地三鲜', category: '家常素菜', selected: false },
-                    { id: 11, name: '炸酱面', category: '主食面条', selected: false },
-                    { id: 12, name: '手冲咖啡', category: '饮品酒水', selected: false },
-                    { id: 13, name: '珍珠奶茶', category: '饮品酒水', selected: false }
+                    { id: 1, name: '辣椒炒肉', category: '川湘', selected: false },
+                    { id: 2, name: '玉米排骨汤', category: '清淡', selected: false },
+                    { id: 3, name: '麻婆豆腐', category: '川湘', selected: false },
+                    { id: 4, name: '番茄炒蛋', category: '家常', selected: false },
+                    { id: 5, name: '隆江猪脚', category: '硬菜', selected: false },
+                    { id: 6, name: '手撕鸡', category: '清淡', selected: false },
+                    { id: 7, name: '地三鲜', category: '素菜', selected: false },
+                    { id: 8, name: '水饺', category: '主食', selected: false },
+                    { id: 9, name: '珍珠奶茶', category: '饮品', selected: false },
+                    { id: 10, name: '手冲咖啡', category: '饮品', selected: false }
                 ]);
-
-                onMounted(() => {
-                    const saved = localStorage.getItem('my_menu_v5');
-                    if (saved) menuList.value = JSON.parse(saved);
-                });
-
-                watch(menuList, (val) => {
-                    localStorage.setItem('my_menu_v5', JSON.stringify(val));
-                }, { deep: true });
-
-                const todayDate = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
-
-                const filteredList = computed(() => {
-                    return filterCat.value === '全部' ? menuList.value : menuList.value.filter(i => i.category === filterCat.value);
-                });
-
                 const selectedItems = computed(() => menuList.value.filter(i => i.selected));
-                const toggleSelect = (item) => { item.selected = !item.selected; };
-                const resetDaily = () => { if(confirm('确定清空已选菜单吗？')) menuList.value.forEach(i => i.selected = false); };
-
-                const generateImage = async () => {
-                    const area = document.getElementById('share-area');
-                    const canvas = await html2canvas(area, { 
-                        backgroundColor: '#ffffff',
-                        scale: 3,
-                        borderRadius: 32
-                    });
-                    shareImage.value = canvas.toDataURL("image/png");
-                };
-
-                return { categories, filterCat, menuList, filteredList, selectedItems, toggleSelect, resetDaily, generateImage, shareImage, todayDate };
+                const reset = () => { if(confirm('重置菜单？')) menuList.value.forEach(i => i.selected = false); };
+                return { menuList, selectedItems, reset };
             }
         }).mount('#app');
     </script>
