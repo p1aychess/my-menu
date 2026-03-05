@@ -3,74 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>私人菜单</title>
+    <title>我的私人菜单</title>
     <style>
-        /* 这里的代码不依赖任何外部文件，100% 能显示 */
-        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 15px; color: #1c1c1e; }
-        .title { font-size: 20px; font-weight: 800; margin: 10px 0 20px 0; display: flex; justify-content: space-between; }
+        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 15px; color: #1c1c1e; padding-bottom: 100px; }
+        .title { font-size: 22px; font-weight: 800; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* 添加区域 */
+        .add-section { background: white; border-radius: 12px; padding: 10px; display: flex; gap: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .add-section input { flex: 1; border: none; background: #f2f2f7; padding: 10px; border-radius: 8px; font-size: 16px; outline: none; }
+        .add-btn { background: #007aff; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; }
+
         .card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; border-left: 6px solid #ff9500; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         
-        /* 核心按钮样式 */
+        /* 按钮与删除态 */
         .food-btn { 
             background: white; border: 1.5px solid #e5e5ea; padding: 18px 10px; border-radius: 12px; 
-            text-align: center; font-weight: 600; font-size: 16px; transition: 0.1s;
+            text-align: center; font-weight: 600; font-size: 16px; position: relative;
         }
-        /* 选中状态 */
         .food-btn.active { background: #ff9500; color: white; border-color: #ff9500; }
-        
+        .del-mark { position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; width: 20px; height: 20px; border-radius: 10px; font-size: 12px; line-height: 20px; display: none; }
+        .edit-mode .del-mark { display: block; }
+
         #result-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 30px; }
         .tag { background: #fff5ee; color: #ff9500; padding: 5px 12px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 1px solid #ff9500; }
+        
+        .footer-btns { position: fixed; bottom: 20px; left: 15px; right: 15px; display: flex; gap: 10px; }
+        .f-btn { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
     <div class="title">
-        <span>🍽️ 今日吃啥</span>
-        <button onclick="location.reload()" style="font-size:12px; border:none; background:none; color:#007aff;">重置刷新</button>
+        <span>🍽️ 私家菜库</span>
+        <button onclick="toggleEdit()" id="edit-toggle" style="font-size:13px; border:none; background:none; color:#007aff;">管理菜品</button>
+    </div>
+
+    <div class="add-section">
+        <input type="text" id="new-food" placeholder="输入新菜名...">
+        <button class="add-btn" onclick="addFood()">添加</button>
     </div>
 
     <div class="card">
-        <div style="font-size:12px; color:#8e8e93; margin-bottom:10px;">已勾选：</div>
+        <div style="font-size:12px; color:#8e8e93; margin-bottom:10px;">今日确定要吃：</div>
         <div id="result-list"></div>
     </div>
 
-    <div class="grid">
-        <div class="food-btn" onclick="tap(this, '辣椒炒肉')">辣椒炒肉</div>
-        <div class="food-btn" onclick="tap(this, '玉米排骨汤')">玉米排骨汤</div>
-        <div class="food-btn" onclick="tap(this, '麻婆豆腐')">麻婆豆腐</div>
-        <div class="food-btn" onclick="tap(this, '番茄炒蛋')">番茄炒蛋</div>
-        <div class="food-btn" onclick="tap(this, '隆江猪脚')">隆江猪脚</div>
-        <div class="food-btn" onclick="tap(this, '手撕鸡')">手撕鸡</div>
-        <div class="food-btn" onclick="tap(this, '红烧肉')">红烧肉</div>
-        <div class="food-btn" onclick="tap(this, '清蒸鱼')">清蒸鱼</div>
-        <div class="food-btn" onclick="tap(this, '炸酱面')">炸酱面</div>
-        <div class="food-btn" onclick="tap(this, '奶茶/咖啡')">奶茶/咖啡</div>
+    <div class="grid" id="menu-grid">
+        </div>
+
+    <div class="footer-btns">
+        <button class="f-btn" style="background:#8e8e93; color:white;" onclick="resetSelection()">清空已选</button>
+        <button class="f-btn" style="background:black; color:white;" onclick="alert('选好后直接截图发送即可')">保存截图</button>
     </div>
 
-    <p style="text-align:center; color:#aeaeb2; font-size:11px; margin-top:30px;">选好后截图发给家人</p>
-
     <script>
-        // 纯原生 JavaScript，不加载任何外部文件
+        // 初始化数据
+        let defaultMenu = ['辣椒炒肉', '玉米排骨汤', '麻婆豆腐', '番茄炒蛋', '隆江猪脚', '手撕鸡', '红烧肉', '清蒸鱼'];
+        let menuData = JSON.parse(localStorage.getItem('my_menu_list')) || defaultMenu;
         let selected = [];
-        function tap(el, name) {
+        let isEditMode = false;
+
+        function render() {
+            // 渲染网格
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = menuData.map((name, index) => `
+                <div class="food-btn ${selected.includes(name) ? 'active' : ''}" onclick="tapItem(this, '${name}')">
+                    ${name}
+                    <div class="del-mark" onclick="deleteFood(event, ${index})">✕</div>
+                </div>
+            `).join('');
+
+            // 渲染已选
+            const res = document.getElementById('result-list');
+            res.innerHTML = selected.length ? selected.map(n => `<span class="tag">${n}</span>`).join('') : '<span style="color:#ccc">暂未选菜...</span>';
+            
+            // 保存到本地
+            localStorage.setItem('my_menu_list', JSON.stringify(menuData));
+        }
+
+        function tapItem(el, name) {
+            if(isEditMode) return;
             el.classList.toggle('active');
             if (el.classList.contains('active')) {
-                selected.push(name);
+                if(!selected.includes(name)) selected.push(name);
             } else {
                 selected = selected.filter(i => i !== name);
             }
             render();
         }
 
-        function render() {
-            const container = document.getElementById('result-list');
-            if (selected.length === 0) {
-                container.innerHTML = '<span style="color:#d1d1d6">暂未选菜...</span>';
-                return;
+        function addFood() {
+            const input = document.getElementById('new-food');
+            const val = input.value.trim();
+            if (val && !menuData.includes(val)) {
+                menuData.push(val);
+                input.value = '';
+                render();
             }
-            container.innerHTML = selected.map(name => `<span class="tag">${name}</span>`).join('');
         }
+
+        function deleteFood(e, index) {
+            e.stopPropagation(); // 防止触发点击选中
+            if(confirm('确定删除这道菜吗？')) {
+                const name = menuData[index];
+                menuData.splice(index, 1);
+                selected = selected.filter(i => i !== name);
+                render();
+            }
+        }
+
+        function toggleEdit() {
+            isEditMode = !isEditMode;
+            document.body.classList.toggle('edit-mode');
+            document.getElementById('edit-toggle').innerText = isEditMode ? '完成管理' : '管理菜品';
+            document.getElementById('edit-toggle').style.color = isEditMode ? '#ff3b30' : '#007aff';
+        }
+
+        function resetSelection() {
+            selected = [];
+            render();
+        }
+
         render();
     </script>
 </body>
