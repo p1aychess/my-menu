@@ -3,99 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>私家菜单库</title>
+    <title>私家菜单 App</title>
+    <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/tailwindcss/2.2.19/tailwind.min.css">
     <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/3.2.31/vue.global.prod.min.js"></script>
     <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.staticfile.org/tailwindcss/2.2.19/tailwind.min.js"></script>
     <style>
         [v-cloak] { display: none; }
+        body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background-color: #f8f9fa; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+        /* 增加平滑动画 */
+        .card-active { transform: scale(0.96); border-color: #f97316 !important; background-color: #fff7ed; }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div id="app" v-cloak class="max-w-md mx-auto px-4 py-6">
-        
-        <header class="mb-6 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800">今日菜单</h1>
-            <div class="flex gap-2">
-                <button @click="resetDaily" class="text-xs bg-white px-3 py-1 rounded-full border border-gray-200">重置</button>
-            </div>
-        </header>
+<body class="pb-12">
+    <div id="app" v-cloak>
+        <div class="max-w-md mx-auto px-4 py-6">
+            <header class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-black text-gray-800 tracking-tight">我的私人菜单</h1>
+                <button @click="resetDaily" class="text-xs font-bold text-gray-400 bg-white border px-4 py-2 rounded-full shadow-sm active:bg-gray-100">清空已选</button>
+            </header>
 
-        <div id="share-area" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <span class="text-lg font-black text-orange-500">SELECTED清单</span>
-                <span class="text-[10px] text-gray-400 font-mono">{{ todayDate }}</span>
+            <div id="share-area" class="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-50 mb-8 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-6 border-b-2 border-orange-500 pb-2">
+                    <span class="text-xl font-bold text-gray-800">🍽️ 今日想吃</span>
+                    <span class="text-xs text-gray-400 font-mono italic">{{ todayDate }}</span>
+                </div>
+                
+                <div v-if="selectedItems.length === 0" class="py-12 text-center">
+                    <p class="text-gray-300 italic">请在下方点选菜品...</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div v-for="item in selectedItems" :key="item.id" class="flex justify-between items-center animate-fade-in">
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-orange-500 rounded-full mr-3"></span>
+                            <span class="text-lg font-bold text-gray-700">{{ item.name }}</span>
+                        </div>
+                        <span class="text-[10px] text-orange-400 font-bold border border-orange-100 px-2 py-0.5 rounded uppercase">{{ item.category }}</span>
+                    </div>
+                </div>
+
+                <div v-if="selectedItems.length > 0" class="mt-8 pt-4 border-t border-dashed text-right">
+                    <p class="text-xs text-gray-400">来自：私家菜单 App</p>
+                </div>
             </div>
-            <div v-if="selectedItems.length === 0" class="py-10 text-center text-gray-300 italic text-sm">点击下方菜品添加...</div>
-            <div class="space-y-3">
-                <div v-for="item in selectedItems" :key="item.id" class="flex justify-between items-center bg-orange-50 p-3 rounded-xl">
-                    <span class="font-bold text-gray-700">{{ item.name }}</span>
-                    <span class="text-[10px] text-orange-400 bg-white px-2 py-0.5 rounded-full">{{ item.category }}</span>
+
+            <div class="flex overflow-x-auto gap-2 mb-6 no-scrollbar">
+                <button v-for="cat in categories" @click="filterCat = cat"
+                        :class="['px-6 py-2 rounded-2xl text-sm font-bold shrink-0 transition-all shadow-sm border', filterCat === cat ? 'bg-gray-800 border-gray-800 text-white' : 'bg-white border-gray-100 text-gray-500']">
+                    {{ cat }}
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div v-for="item in filteredList" :key="item.id" 
+                     @click="toggleSelect(item)"
+                     :class="['relative bg-white rounded-3xl p-3 border-2 transition-all cursor-pointer shadow-sm', item.selected ? 'card-active' : 'border-white']">
+                    
+                    <div class="w-full h-28 bg-gray-100 rounded-2xl mb-3 overflow-hidden">
+                        <img :src="`https://s1.ax1x.com/2023/06/07/pCidp80.jpg`" class="w-full h-full object-cover opacity-50">
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                             <span class="text-xs font-bold text-gray-400">{{ item.name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="px-1 text-center">
+                        <div class="text-sm font-black text-gray-800 truncate">{{ item.name }}</div>
+                    </div>
+                    
+                    <div v-if="item.selected" class="absolute top-2 right-2 bg-orange-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] shadow-lg">✓</div>
                 </div>
             </div>
         </div>
 
-        <div class="flex overflow-x-auto gap-2 mb-6 no-scrollbar">
-            <button v-for="cat in categories" @click="filterCat = cat"
-                    :class="['px-4 py-2 rounded-xl text-sm font-bold shrink-0 transition-all', filterCat === cat ? 'bg-orange-500 text-white' : 'bg-white text-gray-400']">
-                {{ cat }}
+        <div v-if="selectedItems.length > 0" class="fixed bottom-6 left-0 right-0 px-10 z-50">
+            <button @click="generateImage" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-full shadow-2xl font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all">
+                📸 生成长图发送
             </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div v-for="item in filteredList" :key="item.id" @click="toggleSelect(item)"
-                 :class="['bg-white rounded-2xl overflow-hidden border-2 transition-all p-2', item.selected ? 'border-orange-500 bg-orange-50' : 'border-transparent shadow-sm']">
-                <img :src="`https://image.thum.io/get/width/300/crop/600/https://baike.baidu.com/item/${encodeURIComponent(item.name)}`" 
-                     class="w-full h-24 object-cover rounded-xl mb-2 bg-gray-100" 
-                     onerror="this.src='https://dummyimage.com/300x200/f3f4f6/999&text=%E7%BE%8E%E9%A3%9F'">
-                <div class="text-sm font-bold text-gray-800 truncate">{{ item.name }}</div>
-                <div class="text-[10px] text-gray-400">{{ item.category }}</div>
-            </div>
-        </div>
-
-        <div v-if="selectedItems.length > 0" class="fixed bottom-6 left-0 right-0 px-10">
-            <button @click="generateImage" class="w-full bg-black text-white py-4 rounded-full shadow-2xl font-bold active:scale-95 transition-transform">
-                📸 生成分享长图
-            </button>
-        </div>
-
-        <div v-if="shareImage" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6" @click="shareImage = null">
-            <p class="text-white mb-4 text-sm font-bold animate-bounce">↓ 长按图片保存发送</p>
-            <img :src="shareImage" class="max-w-full rounded-2xl border-4 border-white shadow-2xl">
+        <div v-if="shareImage" class="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-6" @click="shareImage = null">
+            <p class="text-white mb-4 text-sm font-bold">↑ 长按图片保存发送给家人</p>
+            <img :src="shareImage" class="max-w-full max-h-[70vh] rounded-3xl shadow-2xl border-4 border-white">
+            <p class="text-white/40 mt-6 text-xs italic">点击任意处关闭</p>
         </div>
     </div>
 
     <script>
         const { createApp, ref, computed, onMounted, watch } = Vue;
+
         createApp({
             setup() {
-                const categories = ['全部', '川湘经典', '粤式清淡', '烘焙甜点', '饮品酒水', '主食'];
                 const filterCat = ref('全部');
                 const shareImage = ref(null);
+                const categories = ['全部', '川湘经典', '粤式清淡', '家常素菜', '烘焙甜点', '主食面条', '饮品酒水'];
+                
                 const menuList = ref([
                     { id: 1, name: '辣椒炒肉', category: '川湘经典', selected: false },
                     { id: 2, name: '玉米排骨汤', category: '粤式清淡', selected: false },
                     { id: 3, name: '千层蛋糕', category: '烘焙甜点', selected: false },
-                    { id: 4, name: '蛋挞', category: '烘焙甜点', selected: false },
+                    { id: 4, name: '葡式蛋挞', category: '烘焙甜点', selected: false },
                     { id: 5, name: '蚝油生菜', category: '家常素菜', selected: false },
-                    { id: 6, name: '隆江猪脚饭', category: '粤式清淡', selected: false },
-                    { id: 7, name: '手撕鸡', category: '粤式清淡', selected: false },
+                    { id: 6, name: '隆江猪脚', category: '粤式清淡', selected: false },
+                    { id: 7, name: '广式手撕鸡', category: '粤式清淡', selected: false },
                     { id: 8, name: '麻婆豆腐', category: '川湘经典', selected: false },
-                    { id: 9, name: '咖啡', category: '饮品酒水', selected: false },
-                    { id: 10, name: '奶茶', category: '饮品酒水', selected: false },
-                    { id: 11, name: '炸酱面', category: '主食', selected: false }
+                    { id: 9, name: '回锅肉', category: '川湘经典', selected: false },
+                    { id: 10, name: '地三鲜', category: '家常素菜', selected: false },
+                    { id: 11, name: '炸酱面', category: '主食面条', selected: false },
+                    { id: 12, name: '手冲咖啡', category: '饮品酒水', selected: false },
+                    { id: 13, name: '珍珠奶茶', category: '饮品酒水', selected: false }
                 ]);
 
-                const todayDate = new Date().toLocaleDateString();
-                const filteredList = computed(() => filterCat.value === '全部' ? menuList.value : menuList.value.filter(i => i.category === filterCat.value));
+                onMounted(() => {
+                    const saved = localStorage.getItem('my_menu_v5');
+                    if (saved) menuList.value = JSON.parse(saved);
+                });
+
+                watch(menuList, (val) => {
+                    localStorage.setItem('my_menu_v5', JSON.stringify(val));
+                }, { deep: true });
+
+                const todayDate = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+
+                const filteredList = computed(() => {
+                    return filterCat.value === '全部' ? menuList.value : menuList.value.filter(i => i.category === filterCat.value);
+                });
+
                 const selectedItems = computed(() => menuList.value.filter(i => i.selected));
-                const toggleSelect = (item) => item.selected = !item.selected;
-                const resetDaily = () => menuList.value.forEach(i => i.selected = false);
+                const toggleSelect = (item) => { item.selected = !item.selected; };
+                const resetDaily = () => { if(confirm('确定清空已选菜单吗？')) menuList.value.forEach(i => i.selected = false); };
 
                 const generateImage = async () => {
-                    const canvas = await html2canvas(document.getElementById('share-area'), { scale: 3, backgroundColor: '#F9FAFB' });
+                    const area = document.getElementById('share-area');
+                    const canvas = await html2canvas(area, { 
+                        backgroundColor: '#ffffff',
+                        scale: 3,
+                        borderRadius: 32
+                    });
                     shareImage.value = canvas.toDataURL("image/png");
                 };
 
