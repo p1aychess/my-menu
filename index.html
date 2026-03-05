@@ -3,188 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家庭版万能菜谱库</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <title>私家菜单库</title>
+    <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/3.2.31/vue.global.prod.min.js"></script>
+    <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.staticfile.org/tailwindcss/2.2.19/tailwind.min.js"></script>
     <style>
         [v-cloak] { display: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .active-ring { ring: 4px solid #3b82f6; border-color: #3b82f6; }
-        .tab-active { background-color: #1e293b; color: white; }
+        body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
     </style>
 </head>
-<body class="bg-[#F8F9FB] min-h-screen pb-10">
-    <div id="app" v-cloak>
+<body class="bg-gray-50">
+    <div id="app" v-cloak class="max-w-md mx-auto px-4 py-6">
         
-        <div v-if="selectedItems.length > 0" class="fixed bottom-8 right-6 z-50">
-            <button @click="generateImage" class="bg-orange-500 hover:bg-orange-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-2xl transition-transform active:scale-90">
-                📸
+        <header class="mb-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">今日菜单</h1>
+            <div class="flex gap-2">
+                <button @click="resetDaily" class="text-xs bg-white px-3 py-1 rounded-full border border-gray-200">重置</button>
+            </div>
+        </header>
+
+        <div id="share-area" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <span class="text-lg font-black text-orange-500">SELECTED清单</span>
+                <span class="text-[10px] text-gray-400 font-mono">{{ todayDate }}</span>
+            </div>
+            <div v-if="selectedItems.length === 0" class="py-10 text-center text-gray-300 italic text-sm">点击下方菜品添加...</div>
+            <div class="space-y-3">
+                <div v-for="item in selectedItems" :key="item.id" class="flex justify-between items-center bg-orange-50 p-3 rounded-xl">
+                    <span class="font-bold text-gray-700">{{ item.name }}</span>
+                    <span class="text-[10px] text-orange-400 bg-white px-2 py-0.5 rounded-full">{{ item.category }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex overflow-x-auto gap-2 mb-6 no-scrollbar">
+            <button v-for="cat in categories" @click="filterCat = cat"
+                    :class="['px-4 py-2 rounded-xl text-sm font-bold shrink-0 transition-all', filterCat === cat ? 'bg-orange-500 text-white' : 'bg-white text-gray-400']">
+                {{ cat }}
             </button>
         </div>
 
-        <div class="max-w-md mx-auto px-4 py-6">
-            <header class="mb-6">
-                <h1 class="text-3xl font-black text-slate-800">今日吃什么？</h1>
-                <p class="text-slate-400 text-sm mt-1">点击菜品组合，生成分享长图发送</p>
-            </header>
-
-            <div class="mb-6">
-                <input v-model="searchQuery" type="text" placeholder="🔍 搜索海量家常菜..." 
-                       class="w-full bg-white border-none rounded-2xl p-4 shadow-sm focus:ring-2 focus:ring-orange-500">
-            </div>
-
-            <div id="share-area" class="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-50 mb-8 relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-4 opacity-10 text-4xl font-black">MENU</div>
-                <div class="flex justify-between items-baseline mb-6 border-b-2 border-slate-800 pb-2">
-                    <h3 class="text-2xl font-bold text-slate-800 tracking-tighter">📋 今日菜单</h3>
-                    <span class="text-xs font-mono text-slate-400">{{ todayDate }}</span>
-                </div>
-                
-                <div v-if="selectedItems.length === 0" class="py-12 text-center">
-                    <div class="text-4xl mb-2">🥗</div>
-                    <p class="text-slate-300 italic">还没选菜，请在下方点击</p>
-                </div>
-                
-                <div class="space-y-4">
-                    <div v-for="item in selectedItems" :key="item.id" class="flex justify-between items-center group">
-                        <div class="flex items-center">
-                            <span class="w-1.5 h-1.5 bg-orange-500 rounded-full mr-3"></span>
-                            <span class="text-lg font-semibold text-slate-700">{{ item.name }}</span>
-                        </div>
-                        <button @click="toggleSelect(item)" class="text-slate-200 group-hover:text-red-400 transition-colors">✕</button>
-                    </div>
-                </div>
-
-                <div v-if="selectedItems.length > 0" class="mt-8 pt-4 border-t border-dashed border-slate-200 text-right">
-                    <p class="text-xs text-slate-400">共 {{ selectedItems.length }} 道美味</p>
-                </div>
-            </div>
-
-            <div class="flex overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
-                <button v-for="cat in categories" 
-                        @click="filterCat = cat"
-                        :class="['whitespace-nowrap px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm', filterCat === cat ? 'bg-slate-800 text-white' : 'bg-white text-slate-500']">
-                    {{ cat }}
-                </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div v-for="item in filteredList" :key="item.id" 
-                     @click="toggleSelect(item)"
-                     :class="['relative overflow-hidden bg-white rounded-3xl p-3 border-2 transition-all cursor-pointer', item.selected ? 'border-orange-500 ring-4 ring-orange-50 scale-95' : 'border-white']">
-                    <img :src="`https://source.unsplash.com/featured/400x400?${item.tags},cook`" class="w-full h-28 object-cover rounded-2xl mb-3">
-                    <div class="px-1">
-                        <div class="text-sm font-black text-slate-800 truncate">{{ item.name }}</div>
-                        <div class="text-[10px] text-slate-400 mt-0.5">{{ item.category }}</div>
-                    </div>
-                    <div v-if="item.selected" class="absolute top-2 right-2 bg-orange-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg">✓</div>
-                </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div v-for="item in filteredList" :key="item.id" @click="toggleSelect(item)"
+                 :class="['bg-white rounded-2xl overflow-hidden border-2 transition-all p-2', item.selected ? 'border-orange-500 bg-orange-50' : 'border-transparent shadow-sm']">
+                <img :src="`https://image.thum.io/get/width/300/crop/600/https://baike.baidu.com/item/${encodeURIComponent(item.name)}`" 
+                     class="w-full h-24 object-cover rounded-xl mb-2 bg-gray-100" 
+                     onerror="this.src='https://dummyimage.com/300x200/f3f4f6/999&text=%E7%BE%8E%E9%A3%9F'">
+                <div class="text-sm font-bold text-gray-800 truncate">{{ item.name }}</div>
+                <div class="text-[10px] text-gray-400">{{ item.category }}</div>
             </div>
         </div>
 
-        <div v-if="shareImage" class="fixed inset-0 bg-slate-900/95 z-[60] flex flex-col items-center justify-center p-6 animate-fade-in" @click="shareImage = null">
-            <div class="text-white mb-6 text-center">
-                <p class="text-xl font-bold">✨ 图片已生成</p>
-                <p class="opacity-60 text-sm">长按下方图片保存发送</p>
-            </div>
-            <img :src="shareImage" class="max-w-full max-h-[70vh] rounded-3xl shadow-2xl">
-            <button class="mt-10 text-white/40 text-sm px-8 py-3 rounded-full border border-white/10">点击任意位置关闭</button>
+        <div v-if="selectedItems.length > 0" class="fixed bottom-6 left-0 right-0 px-10">
+            <button @click="generateImage" class="w-full bg-black text-white py-4 rounded-full shadow-2xl font-bold active:scale-95 transition-transform">
+                📸 生成分享长图
+            </button>
         </div>
 
+        <div v-if="shareImage" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6" @click="shareImage = null">
+            <p class="text-white mb-4 text-sm font-bold animate-bounce">↓ 长按图片保存发送</p>
+            <img :src="shareImage" class="max-w-full rounded-2xl border-4 border-white shadow-2xl">
+        </div>
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
-
+        const { createApp, ref, computed, onMounted, watch } = Vue;
         createApp({
             setup() {
+                const categories = ['全部', '川湘经典', '粤式清淡', '烘焙甜点', '饮品酒水', '主食'];
                 const filterCat = ref('全部');
-                const searchQuery = ref('');
                 const shareImage = ref(null);
-                const categories = ['全部', '川湘经典', '粤式清淡', '家常素菜', '主食面条', '烘焙甜点', '饮品酒水'];
-                
                 const menuList = ref([
-                    // 川湘经典
-                    { id: 1, name: '辣椒炒肉', category: '川湘经典', tags: 'pork,chili', selected: false },
-                    { id: 2, name: '麻婆豆腐', category: '川湘经典', tags: 'tofu', selected: false },
-                    { id: 3, name: '宫保鸡丁', category: '川湘经典', tags: 'chicken', selected: false },
-                    { id: 4, name: '水煮鱼', category: '川湘经典', tags: 'fish,spicy', selected: false },
-                    { id: 5, name: '回锅肉', category: '川湘经典', tags: 'pork,fry', selected: false },
-                    { id: 6, name: '鱼香肉丝', category: '川湘经典', tags: 'pork,shredded', selected: false },
-                    
-                    // 粤式清淡
-                    { id: 7, name: '玉米排骨汤', category: '粤式清淡', tags: 'soup,pork', selected: false },
-                    { id: 8, name: '隆江猪脚', category: '粤式清淡', tags: 'pork,leg', selected: false },
-                    { id: 9, name: '广式手撕鸡', category: '粤式清淡', tags: 'chicken', selected: false },
-                    { id: 10, name: '清蒸鲈鱼', category: '粤式清淡', tags: 'fish,steam', selected: false },
-                    { id: 11, name: '白灼虾', category: '粤式清淡', tags: 'shrimp', selected: false },
-                    { id: 12, name: '蜜汁叉烧', category: '粤式清淡', tags: 'bbq,pork', selected: false },
-                    
-                    // 家常素菜
-                    { id: 13, name: '蚝油生菜', category: '家常素菜', tags: 'lettuce', selected: false },
-                    { id: 14, name: '酸辣土豆丝', category: '家常素菜', tags: 'potato', selected: false },
-                    { id: 15, name: '地三鲜', category: '家常素菜', tags: 'vegetable', selected: false },
-                    { id: 16, name: '番茄炒蛋', category: '家常素菜', tags: 'egg,tomato', selected: false },
-                    { id: 17, name: '干煸豆角', category: '家常素菜', tags: 'beans', selected: false },
-                    { id: 18, name: '蒜蓉西兰花', category: '家常素菜', tags: 'broccoli', selected: false },
-
-                    // 烘焙
-                    { id: 19, name: '千层蛋糕', category: '烘焙甜点', tags: 'cake', selected: false },
-                    { id: 20, name: '葡式蛋挞', category: '烘焙甜点', tags: 'tart', selected: false },
-                    { id: 21, name: '烤鸡翅', category: '烘焙甜点', tags: 'wings', selected: false },
-                    { id: 22, name: '披萨', category: '烘焙甜点', tags: 'pizza', selected: false },
-
-                    // 主食
-                    { id: 23, name: '五常米饭', category: '主食面条', tags: 'rice', selected: false },
-                    { id: 24, name: '老北京炸酱面', category: '主食面条', tags: 'noodles', selected: false },
-                    { id: 25, name: '牛肉面', category: '主食面条', tags: 'beef,noodles', selected: false },
-                    { id: 26, name: '猪肉大葱水饺', category: '主食面条', tags: 'dumplings', selected: false },
-
-                    // 饮品
-                    { id: 27, name: '经典奶茶', category: '饮品酒水', tags: 'milktea', selected: false },
-                    { id: 28, name: '手冲咖啡', category: '饮品酒水', tags: 'coffee', selected: false },
-                    { id: 29, name: '冰镇啤酒', category: '饮品酒水', tags: 'beer', selected: false },
-                    { id: 30, name: '柠檬气泡水', category: '饮品酒水', tags: 'soda', selected: false }
+                    { id: 1, name: '辣椒炒肉', category: '川湘经典', selected: false },
+                    { id: 2, name: '玉米排骨汤', category: '粤式清淡', selected: false },
+                    { id: 3, name: '千层蛋糕', category: '烘焙甜点', selected: false },
+                    { id: 4, name: '蛋挞', category: '烘焙甜点', selected: false },
+                    { id: 5, name: '蚝油生菜', category: '家常素菜', selected: false },
+                    { id: 6, name: '隆江猪脚饭', category: '粤式清淡', selected: false },
+                    { id: 7, name: '手撕鸡', category: '粤式清淡', selected: false },
+                    { id: 8, name: '麻婆豆腐', category: '川湘经典', selected: false },
+                    { id: 9, name: '咖啡', category: '饮品酒水', selected: false },
+                    { id: 10, name: '奶茶', category: '饮品酒水', selected: false },
+                    { id: 11, name: '炸酱面', category: '主食', selected: false }
                 ]);
 
-                const todayDate = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
-
-                const filteredList = computed(() => {
-                    let list = menuList.value;
-                    if (filterCat.value !== '全部') {
-                        list = list.filter(i => i.category === filterCat.value);
-                    }
-                    if (searchQuery.value) {
-                        list = list.filter(i => i.name.includes(searchQuery.value));
-                    }
-                    return list;
-                });
-
+                const todayDate = new Date().toLocaleDateString();
+                const filteredList = computed(() => filterCat.value === '全部' ? menuList.value : menuList.value.filter(i => i.category === filterCat.value));
                 const selectedItems = computed(() => menuList.value.filter(i => i.selected));
-
-                const toggleSelect = (item) => { item.selected = !item.selected; };
+                const toggleSelect = (item) => item.selected = !item.selected;
+                const resetDaily = () => menuList.value.forEach(i => i.selected = false);
 
                 const generateImage = async () => {
-                    const element = document.getElementById('share-area');
-                    // 截图前隐藏操作按钮
-                    const btns = element.querySelectorAll('button');
-                    btns.forEach(b => b.style.opacity = '0');
-
-                    const canvas = await html2canvas(element, {
-                        backgroundColor: '#ffffff',
-                        scale: 3,
-                        borderRadius: 32
-                    });
-                    
+                    const canvas = await html2canvas(document.getElementById('share-area'), { scale: 3, backgroundColor: '#F9FAFB' });
                     shareImage.value = canvas.toDataURL("image/png");
-                    btns.forEach(b => b.style.opacity = '1');
                 };
 
-                return {
-                    categories, filterCat, searchQuery, menuList, filteredList, 
-                    selectedItems, toggleSelect, generateImage, shareImage, todayDate
-                };
+                return { categories, filterCat, menuList, filteredList, selectedItems, toggleSelect, resetDaily, generateImage, shareImage, todayDate };
             }
         }).mount('#app');
     </script>
