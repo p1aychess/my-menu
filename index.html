@@ -5,147 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>私厨智能菜单</title>
     <style>
-        :root { --primary: #e67e22; --bg: #f4f7f6; --white: #ffffff; }
+        :root { --primary: #e67e22; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-bottom: 80px; }
         
-        /* 顶部导航 */
-        .sticky-header { position: sticky; top: 0; background: var(--bg); z-index: 100; padding: 5px 0 15px; }
-        .search-box { width: 100%; padding: 12px 20px; border: 2px solid var(--primary); border-radius: 25px; font-size: 16px; outline: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .filter-wrapper { display: flex; overflow-x: auto; white-space: nowrap; gap: 8px; padding: 10px 0; scrollbar-width: none; }
-        .filter-wrapper::-webkit-scrollbar { display: none; }
-        .tag { padding: 6px 16px; background: #fff; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
-        .tag.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: bold; }
+        /* 搜索与分类 */
+        .sticky-header { position: sticky; top: 0; background: var(--bg); z-index: 100; padding-bottom: 10px; }
+        .search-box { width: 100%; padding: 12px; border: 2px solid var(--primary); border-radius: 25px; outline: none; box-sizing: border-box; }
+        .filter-wrapper { display: flex; overflow-x: auto; gap: 8px; padding: 10px 0; scrollbar-width: none; }
+        .tag { padding: 6px 14px; background: #fff; border-radius: 20px; font-size: 13px; white-space: nowrap; border: 1px solid #ddd; }
+        .tag.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
         /* 菜单卡片 */
-        #menuContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
-        .card { background: var(--white); border-radius: 12px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s; position: relative; }
-        .card:active { transform: scale(0.98); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; }
-        .card h3 { margin: 0; font-size: 18px; }
-        .cat-badge { font-size: 11px; background: #fff3e0; color: var(--primary); padding: 2px 8px; border-radius: 4px; }
+        #menuContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .card { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; border-top: 4px solid var(--primary); }
+        .card h3 { margin: 0 0 10px 0; font-size: 18px; display: flex; justify-content: space-between; }
+        .cat-badge { font-size: 11px; color: var(--primary); background: #fff3e0; padding: 2px 6px; border-radius: 4px; }
+        .recipe-content { font-size: 14px; color: #666; line-height: 1.6; white-space: pre-wrap; margin-bottom: 45px; }
         
-        /* 做法详情 - 默认隐藏 */
-        .recipe-detail { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; font-size: 14px; color: #666; line-height: 1.6; }
-        .card.expanded .recipe-detail { display: block; }
-
         /* 下单按钮 */
-        .order-btn { margin-top: 15px; width: 100%; padding: 8px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .order-btn { position: absolute; bottom: 15px; right: 15px; padding: 6px 15px; border-radius: 15px; border: none; background: #eee; cursor: pointer; }
+        .order-btn.selected { background: var(--primary); color: #fff; }
 
-        /* 底部购物车栏 */
-        .cart-bar { position: fixed; bottom: 15px; left: 15px; right: 15px; background: #333; color: #fff; padding: 15px 20px; border-radius: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .checkout-btn { background: var(--primary); border: none; color: #fff; padding: 8px 20px; border-radius: 20px; font-weight: bold; }
+        /* 底部条 */
+        .footer-bar { position: fixed; bottom: 15px; left: 15px; right: 15px; background: #333; color: #fff; border-radius: 30px; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 200; }
+        .checkout-btn { background: var(--primary); border: none; color: #fff; padding: 8px 18px; border-radius: 20px; font-weight: bold; }
+
+        /* 清单预览层 - 模拟图3样式 */
+        #orderOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; overflow-y: auto; padding: 40px 20px; box-sizing: border-box; }
+        .list-header { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
+        .list-item { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .list-item h2 { font-size: 20px; margin: 0 0 10px 0; }
+        .close-overlay { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; }
     </style>
 </head>
 <body>
 
-<div class="sticky-header">
-    <input type="text" id="searchInput" class="search-box" placeholder="输入菜名或食材搜索...">
-    <div class="filter-wrapper" id="filterTags"></div>
+<div id="mainUI">
+    <div class="sticky-header">
+        <input type="text" id="searchInput" class="search-box" placeholder="搜索菜名、食材...">
+        <div class="filter-wrapper" id="filterTags"></div>
+    </div>
+    <div id="menuContainer">加载中...</div>
+    <div class="footer-bar">
+        <span>已选 <b id="cartCount">0</b> 道菜</span>
+        <button class="checkout-btn" onclick="showOrder()">生成清单</button>
+    </div>
 </div>
 
-<div id="menuContainer">加载中...</div>
-
-<div class="cart-bar" id="cartBar">
-    <div>已选: <span id="cartCount">0</span> 道菜</div>
-    <button class="checkout-btn" onclick="checkout()">立即下单</button>
+<div id="orderOverlay">
+    <button class="close-overlay" onclick="closeOrder()">✕</button>
+    <div class="list-header">
+        <h1>今日私厨清单</h1>
+        <p id="orderDate"></p>
+    </div>
+    <div id="orderList"></div>
+    <p style="text-align: center; color: #ccc; font-size: 12px; margin-top: 40px;">—— 每一道菜都值得被用心对待 ——</p>
 </div>
 
 <script>
-    let allMenuItems = [];
-    let cart = new Set();
+    let menuData = [];
+    let selectedSet = new Set();
     let currentCat = '全部';
 
-    // 1. 初始化及同步逻辑
-    async function init() {
+    async function load() {
         try {
             const res = await fetch('menu.txt');
             const text = await res.text();
-            const menuMap = new Map();
+            const map = new Map();
 
             text.split('\n').forEach(line => {
-                if (!line.includes('#')) return;
-                const parts = line.match(/^([^#]+)#([^#]+)#(.*)$/);
-                if (parts) {
-                    const name = parts[1].trim();
-                    menuMap.set(name, {
-                        name: name,
-                        category: parts[2].trim(),
-                        details: parts[3].trim().replace(/\\n/g, '\n')
-                    });
+                // 正则适配：菜名#分类#做法内容
+                const m = line.match(/^([^#]+)#([^#]+)#(.*)$/);
+                if (m) {
+                    const name = m[1].trim();
+                    map.set(name, { name, cat: m[2].trim(), detail: m[3].trim().replace(/\\n/g, '\n') });
                 }
             });
-
-            allMenuItems = Array.from(menuMap.values());
+            menuData = Array.from(map.values());
             renderTags();
-            updateDisplay();
-        } catch (e) {
-            document.getElementById('menuContainer').innerText = "同步失败，请检查 menu.txt。";
-        }
+            renderMenu();
+        } catch(e) { console.error(e); }
     }
 
-    // 2. 渲染分类
     function renderTags() {
-        const categories = ['全部', ...new Set(allMenuItems.map(i => i.category))];
-        document.getElementById('filterTags').innerHTML = categories.map(c => 
+        const cats = ['全部', ...new Set(menuData.map(i => i.cat))];
+        document.getElementById('filterTags').innerHTML = cats.map(c => 
             `<div class="tag ${c === currentCat ? 'active' : ''}" onclick="setCat('${c}')">${c}</div>`
         ).join('');
     }
 
-    function setCat(c) {
-        currentCat = c;
-        renderTags();
-        updateDisplay();
-    }
+    function setCat(c) { currentCat = c; renderTags(); renderMenu(); }
 
-    // 3. 渲染菜单及功能逻辑
-    function updateDisplay() {
+    function renderMenu() {
         const kw = document.getElementById('searchInput').value.toLowerCase();
-        const filtered = allMenuItems.filter(i => {
-            const matchCat = (currentCat === '全部' || i.category === currentCat);
-            const matchKw = i.name.toLowerCase().includes(kw) || i.details.toLowerCase().includes(kw);
-            return matchCat && matchKw;
-        });
+        const filtered = menuData.filter(i => (currentCat === '全部' || i.cat === currentCat) && 
+            (i.name.toLowerCase().includes(kw) || i.detail.toLowerCase().includes(kw)));
 
-        const container = document.getElementById('menuContainer');
-        container.innerHTML = filtered.map(i => `
-            <div class="card" onclick="this.classList.toggle('expanded')">
-                <div class="card-header">
-                    <h3>${i.name}</h3>
-                    <span class="cat-badge">${i.category}</span>
-                </div>
-                <div class="recipe-detail">
-                    ${i.details.replace(/\n/g, '<br>')}
-                </div>
-                <button class="order-btn" onclick="addToCart(event, '${i.name}')">
-                    ${cart.has(i.name) ? '取消选择' : '点击下单'}
+        document.getElementById('menuContainer').innerHTML = filtered.map(i => `
+            <div class="card">
+                <h3>${i.name} <span class="cat-badge">${i.cat}</span></h3>
+                <div class="recipe-content">${i.detail}</div>
+                <button class="order-btn ${selectedSet.has(i.name) ? 'selected' : ''}" 
+                        onclick="toggleSelect('${i.name}')">
+                    ${selectedSet.has(i.name) ? '已选' : '选择'}
                 </button>
             </div>
         `).join('');
     }
 
-    // 4. 下单逻辑
-    function addToCart(event, name) {
-        event.stopPropagation(); // 防止触发卡片展开
-        if (cart.has(name)) {
-            cart.delete(name);
-        } else {
-            cart.add(name);
-        }
-        document.getElementById('cartCount').innerText = cart.size;
-        updateDisplay();
+    function toggleSelect(name) {
+        selectedSet.has(name) ? selectedSet.delete(name) : selectedSet.add(name);
+        document.getElementById('cartCount').innerText = selectedSet.size;
+        renderMenu();
     }
 
-    function checkout() {
-        if (cart.size === 0) return alert("请先点菜");
-        alert("下单成功！已选菜品：\n" + Array.from(cart).join('、'));
-        cart.clear();
-        document.getElementById('cartCount').innerText = 0;
-        updateDisplay();
+    function showOrder() {
+        if (selectedSet.size === 0) return alert("请先选菜");
+        const list = menuData.filter(i => selectedSet.has(i.name));
+        document.getElementById('orderDate').innerText = new Date().toLocaleString();
+        document.getElementById('orderList').innerHTML = list.map(i => `
+            <div class="list-item">
+                <h2>● ${i.name} <small style="font-size:12px; color:#999; font-weight:normal;">[${i.cat}]</small></h2>
+                <div style="white-space:pre-wrap; font-size:14px; color:#444;">${i.detail}</div>
+            </div>
+        `).join('');
+        document.getElementById('orderOverlay').style.display = 'block';
     }
 
-    document.getElementById('searchInput').addEventListener('input', updateDisplay);
-    init();
+    function closeOrder() { document.getElementById('orderOverlay').style.display = 'none'; }
+
+    document.getElementById('searchInput').addEventListener('input', renderMenu);
+    load();
 </script>
-
 </body>
 </html>
